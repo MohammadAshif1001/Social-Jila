@@ -1,33 +1,17 @@
 from django.db import models
-from django.contrib.auth.models import User as UserModel
+from django.contrib.auth.models import AbstractUser
 
-class User(models.Model):
-    user= models.ForeignKey(UserModel,on_delete=models.CASCADE)
-    bio = models.TextField()
-    profile_pic = models.CharField(max_length=50)
 
-class API(models.Model):
-    api_id = models.IntegerField(primary_key=True)
-    name = models.CharField(max_length=50)
-    description = models.TextField()
-    url = models.URLField()
-    auth_method = models.CharField(max_length=50)
+def user_directory_path(instance, filename):
+    return '{0}/{1}'.format(instance.id, filename)
+class UserProfile(AbstractUser):
+    bio = models.TextField(max_length=500, blank=True)
+    profile_picture = models.ImageField(upload_to=user_directory_path, blank=True)
 
-class User_API(models.Model):
-    user = models.ForeignKey(UserModel, on_delete=models.CASCADE)
-    api = models.ForeignKey(API, on_delete=models.CASCADE)
-    access_token = models.CharField(max_length=50)
-    refresh_token = models.CharField(max_length=50)
-
-    class Meta:
-        indexes = [
-            models.Index(fields=['user', 'api']),
-        ]
-        unique_together = ['user', 'api']
-
+    def __str__(self):
+        return self.username
 class Post(models.Model):
-    post_id = models.IntegerField(primary_key=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
     content = models.TextField()
     type = models.CharField(max_length=50)
     timestamp = models.DateTimeField(auto_now_add=True)
@@ -42,8 +26,8 @@ class Post(models.Model):
         ]
 
 class Follower(models.Model):
-    user = models.ForeignKey(UserModel, on_delete=models.CASCADE, related_name='following')
-    follower = models.ForeignKey(UserModel, on_delete=models.CASCADE, related_name='followers')
+    user = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name='following')
+    follower = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name='followers')
 
     class Meta:
         indexes = [
@@ -51,15 +35,14 @@ class Follower(models.Model):
         ]
         unique_together = ['user', 'follower']
 
-class Message(models.Model):
-    message_id = models.IntegerField(primary_key=True)
-    user = models.ForeignKey(UserModel, on_delete=models.CASCADE)
-    api = models.ForeignKey(API, on_delete=models.CASCADE)
-    content = models.TextField()
-    source = models.CharField(max_length=50)
-    timestamp = models.DateTimeField()
+# class Message(models.Model):
+#     user = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
+#     api = models.ForeignKey(API, on_delete=models.CASCADE)
+#     content = models.TextField()
+#     source = models.CharField(max_length=50)
+#     timestamp = models.DateTimeField()
 
-    class Meta:
-        indexes = [
-            models.Index(fields=['user', 'api', '-timestamp']),
-        ]
+#     class Meta:
+#         indexes = [
+#             models.Index(fields=['user', '-timestamp']),
+#         ]
